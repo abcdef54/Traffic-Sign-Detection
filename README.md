@@ -1,41 +1,135 @@
-# Traffic-Sign-Detection
+# 🚦 Real-Time Traffic Sign & Obstacle Detection (Vietnam)
 
-Traffic-Sign-Recognition/
+A Computer Vision system designed to detect **Vietnamese Traffic Signs** and **Road Obstacles** (Pedestrians, Vehicles) in real-time.
+
+Built with **YOLOv11**, **TensorRT**, and **SAHI-style Slicing**, this project solves the "Small Object" problem by dynamically slicing high-resolution video frames while maintaining high FPS through a hybrid inference engine.
+
+## 🌟 Key Features
+
+* **⚡ TensorRT Optimized:** Runs purely on `.engine` models for maximum inference speed on NVIDIA GPUs.
+* **🔪 Dynamic Slicing (SAHI):** Automatically chops 1080p video into smaller tiles (e.g., 960x960) to detect tiny, far-away traffic signs that standard resizing would miss.
+* **🧠 Dual-Core Inference:** Capable of running two distinct models simultaneously:
+  * **Core A:** Custom Traffic Sign Model (YOLOv11s).
+  * **Core B:** Obstacle/Pedestrian Model (YOLOv8n - COCO).
+* **🔄 Hybrid Speed System:** Alternates between "Detailed Slicing" (every N frames) and "Fast Full-Frame" inference to balance accuracy and FPS.
+* **⚖️ Label Stabilization:** Uses a custom Voting/Decay algorithm (`PredictionStabilizer`) to prevent label flickering when signs are far away or blurry.
+* **🧵 Multithreaded I/O:** Decouples video reading from processing to prevent I/O bottlenecks.
+
+## 🛠️ Installation
+
+### Prerequisites
+
+* **GPU:** NVIDIA RTX 30/40 Series recommended (Tested on RTX 4050 & 3060).
+* **Drivers:** CUDA 11.8 or 12.x installed.
+* **Python:** 3.8+.
+
+### Setup
+
+1. **Clone the repository:**
+
+    ```bash
+    git clone [https://github.com/abcdef54/Traffic-Sign-Detection.git](https://github.com/abcdef54/Traffic-Sign-Detection.git)
+    cd Traffic-Sign-Detection
+    ```
+
+2. **Install dependencies:**
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    *(Ensure you have `ultralytics`, `supervision`, `opencv-python`, and `numpy`)*.
+
+3. **Prepare Models:**
+    * Place your trained Sign model (`.engine` or `.pt`) in `models/signs/`.
+    * (Optional) Place a standard YOLOv8n model in `models/peds/` for pedestrian detection.
+
+## 📂 Project Structure
+
+```text
+Traffic-Sign-Detection/
 │
-├── datasets/                   # <--- YOUR DATA (For Training Signs Only)
-│   ├── raw_downloads/          # Zips you downloaded (GTSRB, GTSDB)
-│   └── sign_dataset_v1/        # The dataset you actually train on
-│       ├── data.yaml           # The config file for the SIGN model
+├── datasets/                   # Training Data
+│   └── VietNamSigns/           # Vietnamese Traffic Sign Dataset
+│       ├── data.yaml
 │       ├── train/
-│       │   ├── images/
-│       │   └── labels/
 │       └── val/
-│           ├── images/
-│           └── labels/
 │
-├── models/                     # <--- YOUR BRAINS (Now Dual-Core)
-│   ├── pedestrians/            # Brain 1: Obstacle Detection
-│   │   └── yolov8n.pt          # Pre-trained COCO model (detects people/cars)
-│   │
-│   ├── signs/                  # Brain 2: Traffic Rules
-│   │   ├── yolo11s.pt          # Base model (starting point)
-│   │   ├── best_sign_model.pt  # YOUR trained model (backup)
-│   │   └── best_sign_model.engine # <--- ACTIVE MODEL: The file "Night Eagle" uses
-│   │
-│   └── tracker_config.yaml     # ByteTrack settings
+├── models/                     # Model Weights
+│   ├── pedestrians/            # YOLOv8n (COCO) for obstacles
+│   └── signs/                  # YOLOv11s (Custom) for signs
+│       └── best.engine         # TensorRT Optimized Weight
 │
-├── src/                        # <--- YOUR 4 LAYERS (The Code)
+├── src/                        # Core Logic Modules
 │   ├── __init__.py
-│   ├── video_loader.py         # <--- NEW: The Threaded Reader (Crucial for 100+ FPS)
-│   ├── model.py                # <--- UPDATED: Contains 'SlicedYoloEngine' (InferenceSlicer)
-│   ├── tracker.py              # Layer 2: ByteTrack wrapper
-│   ├── voting.py                # Layer 3: Voting & Smoothing (Sign stability)
-│   └── distance.py             # Layer 4: Math formulas
+│   ├── model.py                # TensorRTSliceModel (Slicing & Dual-Core Logic)
+│   ├── video_reader.py         # Multithreaded Video Capture
+│   ├── voting.py               # PredictionStabilizer (Label Smoothing)
+│   └── distance.py             # (Placeholder) Distance Estimation
 │
-├── runs/                       # <--- AUTOMATIC OUTPUTS
-│   └── detect/                 # YOLO saves training charts here
+├── runs/                       # Training/Inference Outputs
 │
-├── main.py                     # <--- EXECUTE THIS FILE to run the project
-├── train.py                    # Script to train ONLY the Sign model with Night Augmentation
-├── calibrate.py                # Script to find your "Focal Length"
-└── requirements.txt            # Libraries (now includes onnxruntime-gpu, sahi)
+├── main.py                     # 🚀 MAIN EXECUTABLE
+├── requirements.txt            # Python Dependencies
+└── README.md                   # Project Documentation
+
+```
+
+## 🚀 Usage 
+
+### 1. Basic Webcam Demo (Signs Only)Run the sign detector on your default webcam (ID 0). Slicing is enabled by default.
+
+```bash
+python main.py --input 0 --model models/signs/best.engine --show
+
+```
+
+### 2. Video Processing (Signs + Pedestrians)Run both "Cores" on a video file and save the result.
+
+```bash
+python main.py \
+  --input videos/dashcam_footage.mp4 \
+  --output results/output.mp4 \
+  --model models/signs/best.engine \
+  --ped-model models/peds/yolov8n.engine \
+  --save \
+  --verbose
+
+```
+
+### 3. Fast Mode (No Slicing)Disable slicing for maximum FPS (good for testing logic, but may miss small signs).
+
+```bash
+python main.py --model models/signs/best.engine --no-slice --show
+
+```
+
+## ⚙️ Configuration ArgumentsYou can tweak the system performance via command-line arguments:
+
+| Argument | Default | Description |
+| --- | --- | --- |
+| `--input` | `"0"` | Path to video file or webcam ID (`0`, `1`). |
+| `--model` | `Required` | Path to the **Sign Detection** model (`.pt` or `.engine`). |
+| `--ped-model` | `""` | Path to **Pedestrian** model. If empty, Dual-Core is disabled. |
+| `--base-imgsz` | `960` | The resolution your model was trained on (Crucial for TensorRT). |
+| `--no-slice` | `False` | Add this flag to **disable** slicing (run standard Resize only). |
+| `--slice-interval` | `5` | Run Slicing every `N` frames. Lower = More accurate but slower. |
+| `--conf-detect` | `0.2` | Confidence threshold to detect an object. |
+| `--conf-track` | `0.55` | Confidence threshold to start tracking an object. |
+| `--verbose` | `False` | Print detailed FPS and detection logs to console. |
+
+## 🏋️ Training (Reference)To train the Sign Model with the robust "Golden Command" (optimized for accuracy and geometry stability):
+
+```powershell
+yolo detect train model=yolo11s.pt data=datasets/VietNamSigns/data.yaml \
+    epochs=100 imgsz=960 scale=0.8 \
+    fliplr=0.0 flipud=0.0 shear=0.0 degrees=0.0 perspective=0.0 \
+    mosaic=1.0 mixup=0.0 close_mosaic=10 \
+    device=0 batch=8 workers=4 cache=disk amp=True \
+    name=yolo_final_stable
+
+```
+
+## 📜 Credits* **Dataset:** [Vietnamese Traffic Signs (Kaggle)](https://www.kaggle.com/datasets/maitam/vietnamese-traffic-signs)
+
+* **Frameworks:** [Ultralytics YOLO](https://github.com/ultralytics/ultralytics), [Supervision](https://github.com/roboflow/supervision)
