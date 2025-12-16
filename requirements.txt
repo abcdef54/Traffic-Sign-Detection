@@ -1,0 +1,24 @@
+# --- PyTorch (GPU Version - Stable CUDA 12.4) ---
+# This line tells pip to look at the PyTorch server for GPU wheels
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch>=2.5.1
+torchvision>=0.20.1
+torchaudio>=2.5.1
+
+# --- Core Computer Vision & AI ---
+ultralytics>=8.3.0    # YOLOv8/v11 framework
+opencv-python>=4.10.0 # Video streams & math
+numpy>=1.24.0         # Logic calculations
+
+# --- Tracking (Layer 2) ---
+supervision>=0.24.0   # ByteTrack wrapper
+
+# --- Night Eagle Upgrades (Layer 1) ---
+sahi>=0.11.16         # Slicing Aided Hyper Inference
+onnx>=1.17.0          # Model format
+onnxruntime-gpu>=1.19.0 # Hardware acceleration
+
+# --- Utilities ---
+PyYAML>=6.0
+requests>=2.31.0
+tqdm>=4.66.0

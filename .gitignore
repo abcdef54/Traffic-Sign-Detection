@@ -1,0 +1,6 @@
+.traffic_venv/
+datasets/
+SanityCheck/
+SanityCheck/videos/
+__pycache__/
+outputs_vids/
