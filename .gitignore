@@ -1,6 +1,6 @@
 .traffic_venv/
-datasets/
+datasets/VietNamSigns/
 SanityCheck/
-SanityCheck/videos/
 __pycache__/
 outputs_vids/
+.vscode/

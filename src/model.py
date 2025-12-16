@@ -6,42 +6,75 @@ from typing import Dict, Tuple, Optional
 class TensorRTSliceModel:
     def __init__(self, 
                  sign_model_path: str,
-                 ped_model_path: Optional[str] = None, # Path for the 2nd core
+                 train_imgsz: int,
+                 input_imgsz: Tuple[int, int],
+                 ped_model_path: Optional[str] = None,
                  class_names: Dict[int, str] = None,
                  conf: float = 0.25,
                  slice_inference: bool = True,
                  dual_core: bool = True,
-                 imgsz: int = 960,
-                 # Slicing Config
                  slice_interval: int = 5,
-                 tiles: Tuple[int, int] = (2, 2),      
-                 overlap_ratio: Tuple[float, float] = (0.2, 0.2)
+                 overlap_ratio: Tuple[float, float] = (0.0, 0.0)
                  ) -> None:
-        
+        print("-------------Intializing TensorRTSliceModel-------------")
         self.sign_model_path = sign_model_path
         self.ped_model_path = ped_model_path
         self.class_names = class_names or {}
         self.conf = conf
         self.frame_count = 0
-        self.slice_interval = slice_interval
-        self.imgsz = imgsz
+        
+        self.imgsz = train_imgsz 
         
         self.slice_inference = slice_inference
+        self.slice_interval = slice_interval
+        if self.slice_inference:
+            print("[INFO] Slice Inference: ON")
+            print(f"[INFO] Slice interval: {self.slice_interval}")
+        else:
+            print("[INFO] Slice Inference: OFF")
         self.dual_core = dual_core
         
         self.sign_model = self._load_model(self.sign_model_path)
+        print("[INFO] Sign Detection Mode Loaded")
         self.ped_model = None
 
         if self.dual_core and not self.ped_model_path:
             print("[WARNING] Dual-Core enabled but no model path provided. Disabling Dual-Core.")
             self.dual_core = False
+        
+        if not self.dual_core and self.ped_model_path:
+            print("[WARNING] Model path was provided but Dual-Core parameter is not enabled. Disabling Dual-Core.")
+            self.dual_core = False
 
-        if self.ped_model_path:
+        if self.ped_model_path and self.dual_core:
             self.ped_model = self._load_model(self.ped_model_path)
             print(f"[INFO] Dual-Core Loaded: {self.ped_model_path}")
 
-        slice_wh, overlap_wh = self._calculate_slice_params(imgsz, tiles, overlap_ratio)
-        print(f"[INFO] Slicing Config: {tiles} grid | Slice: {slice_wh} | Overlap: {overlap_wh}")
+        # Slicer Configuration
+        slice_wh = (self.imgsz, self.imgsz)
+        overlap_wh = (
+            int(slice_wh[0] * overlap_ratio[0]), 
+            int(slice_wh[1] * overlap_ratio[1])
+        )
+        # We use standard stride math to determine how many slices fit in the input image
+        h, w = input_imgsz
+        stride_w = slice_wh[0] - overlap_wh[0]
+        stride_h = slice_wh[1] - overlap_wh[1]
+        
+        # Avoid division by zero
+        if stride_w <= 0 or stride_h <= 0:
+            raise ValueError("Overlap is too large! Stride must be positive.")
+
+        # Count slices using ceiling logic (matches InferenceSlicer behavior)
+        n_cols = len(np.arange(0, w, stride_w))
+        n_rows = len(np.arange(0, h, stride_h))
+        total_slices = n_cols * n_rows
+        
+        print(f"[INFO] Model Resolution: {self.imgsz}x{self.imgsz}")
+        print(f"[INFO] Slicing Config: Fixed Slice: {slice_wh} | Overlap: {overlap_wh}")
+        print(f"[INFO] Slicing Geometry for {w}x{h}:")
+        print(f"       -> Grid Layout: {n_cols} cols x {n_rows} rows")
+        print(f"       -> Total Slices per frame: {total_slices}")
         
         self.slicer = sv.InferenceSlicer(
             callback=self._slice_callback,
@@ -51,6 +84,7 @@ class TensorRTSliceModel:
             thread_workers=4
         )
 
+        print("-------------Finished-------------")
     def _load_model(self, path: str) -> YOLO:
         try:
             return YOLO(path, task='detect', verbose=False)
@@ -72,40 +106,19 @@ class TensorRTSliceModel:
 
     def _slice_callback(self, image_slice: np.ndarray) -> sv.Detections:
         """Callback for InferenceSlicer. Runs on small image chunks."""
-        result = self.sign_model(image_slice, verbose=False, conf=self.conf)[0]
+        result = self.sign_model(image_slice, verbose=False, conf=self.conf, imgsz=self.imgsz)[0]
         return sv.Detections.from_ultralytics(result)
-
-    def _calculate_slice_params(self, imgsz: int, tiles: Tuple[int, int], overlap_ratio: Tuple[float, float]):
-        rows, cols = tiles
-        overlap_h, overlap_w = overlap_ratio
-        
-        slice_w = int(imgsz / cols)
-        slice_h = int(imgsz / rows)
-        
-        slice_w = int(slice_w * (1 + overlap_w))
-        slice_h = int(slice_h * (1 + overlap_h))
-        
-        overlap_px_w = int(slice_w * overlap_w)
-        overlap_px_h = int(slice_h * overlap_h)
-        
-        return (slice_w, slice_h), (overlap_px_w, overlap_px_h)
 
     def __call__(self, frame: np.ndarray) -> sv.Detections:
         """
         Main Inference Entry Point. Returns Merged sv.Detections
         """
         self.frame_count = (self.frame_count + 1) % self.slice_interval
-        
-        # 1. Sign Detection Logic
-        # Condition: Slicing is ON AND it is the correct "Nth" frame
         should_slice = self.slice_inference and (self.frame_count % self.slice_interval == 0)
 
         if should_slice:
-            # Slow path (High Accuracy)
             sign_detections = self.slicer(frame)
         else:
-            # Fast path (Standard YOLO)
-            # We still run detection to update the tracker, but on the full frame only
             result = self.sign_model(frame, verbose=False, conf=self.conf, imgsz=self.imgsz)[0]
             sign_detections = sv.Detections.from_ultralytics(result)
         ped_detections = sv.Detections.empty()
