@@ -28,7 +28,7 @@ Built with **YOLOv11**, **TensorRT**, and **SAHI-style Slicing**, this project s
 1. **Clone the repository:**
 
     ```bash
-    git clone [https://github.com/abcdef54/Traffic-Sign-Detection.git](https://github.com/abcdef54/Traffic-Sign-Detection.git)
+    git clone https://github.com/abcdef54/Traffic-Sign-Detection.git
     cd Traffic-Sign-Detection
     ```
 
@@ -75,7 +75,7 @@ Traffic-Sign-Detection/
 
 ```
 
-## 🚀 Usage 
+## 🚀 Usage
 
 ### 1. Basic Webcam Demo (Signs Only)Run the sign detector on your default webcam (ID 0). Slicing is enabled by default.
 
@@ -97,14 +97,14 @@ python main.py \
 
 ```
 
-### 3. Fast Mode (No Slicing)Disable slicing for maximum FPS (good for testing logic, but may miss small signs).
+### 3. Fast Mode (No Slicing)Disable slicing for maximum FPS (good for testing logic, but may miss small signs)
 
 ```bash
 python main.py --model models/signs/best.engine --no-slice --show
 
 ```
 
-## ⚙️ Configuration ArgumentsYou can tweak the system performance via command-line arguments:
+## ⚙️ Configuration ArgumentsYou can tweak the system performance via command-line arguments
 
 | Argument | Default | Description |
 | --- | --- | --- |
@@ -118,7 +118,7 @@ python main.py --model models/signs/best.engine --no-slice --show
 | `--conf-track` | `0.55` | Confidence threshold to start tracking an object. |
 | `--verbose` | `False` | Print detailed FPS and detection logs to console. |
 
-## 🏋️ Training (Reference)To train the Sign Model with the robust "Golden Command" (optimized for accuracy and geometry stability):
+## 🏋️ Training (Reference)To train the Sign Model with the robust "Golden Command" (optimized for accuracy and geometry stability)
 
 ```powershell
 yolo detect train model=yolo11s.pt data=datasets/VietNamSigns/data.yaml \
