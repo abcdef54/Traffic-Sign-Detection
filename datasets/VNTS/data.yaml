@@ -1,0 +1,74 @@
+# Train/Val paths (Test is merged, so we comment it out)
+train: train/images
+val: val/images
+# test: ../test/images 
+
+# Number of classes (0 to 56 = 57 classes total) class after merge and removals -> 
+nc: 57
+
+# Class Names
+names:
+  0: 'DP.135 - End all restrictions'
+  1: 'I.408 - Parking allowed'
+  2: 'I.423b - Pedestrian crossing'
+  3: 'P.102 - No entry'
+  4: 'P.103a - No cars'
+  5: 'P.103b - No left turn for cars'
+  6: 'P.103c - No right turn for cars'
+  7: 'P.104 - No motorcycles'
+  8: 'P.106a - No trucks'
+  9: 'P.106b - Weight limit for trucks'
+  10: 'P.107a - No buses'
+  11: 'P.112 - No pedestrians'
+  12: 'P.115 - Weight limit'
+  13: 'P.117 - Height limit'
+  14: 'P.123a - No left turn'
+  15: 'P.123b - No right turn'
+  16: 'P.124a - No U-turn'
+  17: 'P.124b - No U-turn for cars'
+  18: 'P.124c - No left turn or U-turn'
+  19: 'P.125 - No overtaking'
+  20: 'P.127 - Speed limit'
+  21: 'P.128 - No honking'
+  22: 'P.130 - No stopping or parking'
+  23: 'P.131a - No parking'
+  24: 'P.137 - No left or right turn'
+  25: 'UNUSED_P.245a'                    # Removed (Noise)
+  26: 'R.301c - Obligatory left turn'
+  27: 'R.301d - Obligatory right turn'
+  28: 'MERGED_INTO_26'                   # R.301e merged into R.301c
+  29: 'R.302a - Right turn only'
+  30: 'R.302b - Left turn only'
+  31: 'R.303 - Roundabout'
+  32: 'R.407a - One way'
+  33: 'R.409 - U-turn allowed'
+  34: 'UNUSED_R.425'                     # Removed (Hospital)
+  35: 'R.434 - Bus stop'
+  36: 'S.509a - Safe height info'
+
+  37: 'W.201 - Dangerous curve'          # Merged W.201a/b
+  38: 'MERGED_INTO_37'
+
+  39: 'W.202 - Zigzag road'              # Merged W.202a/b
+  40: 'MERGED_INTO_39'
+
+  41: 'W.203 - Narrow road'              # Merged W.203b/c
+  42: 'MERGED_INTO_41'
+
+  43: 'W.205a - 4-way intersection'
+
+  44: 'W.205b - T-intersection'          # Merged W.205b/d
+  45: 'MERGED_INTO_44'
+
+  46: 'W.207 - Non-priority intersection' # Merged W.207a/b/c
+  47: 'MERGED_INTO_46'
+  48: 'MERGED_INTO_46'
+
+  49: 'W.208 - Yield'
+  50: 'W.209 - Traffic lights ahead'
+  51: 'W.210 - Railway crossing'
+  52: 'W.224 - Pedestrian crossing ahead'
+  53: 'W.225 - Children crossing'
+  54: 'W.227 - Construction'
+  55: 'W.245a - Go slow'
+  56: 'P.124d - No right turn or U-turn' # New Synthetic Class

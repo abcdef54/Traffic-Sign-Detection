@@ -6,4 +6,4 @@ from src.distance import DistanceEstimator as DistanceEstimator
 __all__ = ['MultithreadVideoCapture',
            'PredictionStabilizer',
            'TensorRTSliceModel',
-           'DistanceEstimator']
+           'DistanceEstimator',]

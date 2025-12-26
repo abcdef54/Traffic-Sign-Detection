@@ -2,7 +2,7 @@
 
 A Computer Vision system designed to detect **Vietnamese Traffic Signs** and **Road Obstacles** (Pedestrians, Vehicles) in real-time.
 
-Built with **YOLOv11**, **TensorRT**, and **SAHI-style Slicing**, this project solves the "Small Object" problem by dynamically slicing high-resolution video frames while maintaining high FPS through a hybrid inference engine.
+Built with **YOLOv11**, **TensorRT**, and **SAHI-style Slicing**.
 
 ## 🌟 Key Features
 
@@ -41,7 +41,7 @@ Built with **YOLOv11**, **TensorRT**, and **SAHI-style Slicing**, this project s
     *(Ensure you have `ultralytics`, `supervision`, `opencv-python`, and `numpy`)*.
 
 3. **Prepare Models:**
-    * Place your trained Sign model (`.engine` or `.pt`) in `models/signs/`.
+    * Place your trained Sign model (`.engine` or `.pt` or `.onnx`) in `models/signs/`.
     * (Optional) Place a standard YOLOv8n model in `models/peds/` for pedestrian detection.
 
 ## 📂 Project Structure
@@ -100,7 +100,7 @@ python main.py \
 ### 3. Fast Mode (No Slicing)Disable slicing for maximum FPS (good for testing logic, but may miss small signs)
 
 ```bash
-python main.py --model models/signs/best.engine --no-slice --show
+python main.py --model models/signs/best.engine --no-slice --show --input "0"
 
 ```
 
@@ -111,25 +111,13 @@ python main.py --model models/signs/best.engine --no-slice --show
 | `--input` | `"0"` | Path to video file or webcam ID (`0`, `1`). |
 | `--model` | `Required` | Path to the **Sign Detection** model (`.pt` or `.engine`). |
 | `--ped-model` | `""` | Path to **Pedestrian** model. If empty, Dual-Core is disabled. |
-| `--base-imgsz` | `960` | The resolution your model was trained on (Crucial for TensorRT). |
 | `--no-slice` | `False` | Add this flag to **disable** slicing (run standard Resize only). |
 | `--slice-interval` | `5` | Run Slicing every `N` frames. Lower = More accurate but slower. |
 | `--conf-detect` | `0.2` | Confidence threshold to detect an object. |
 | `--conf-track` | `0.55` | Confidence threshold to start tracking an object. |
 | `--verbose` | `False` | Print detailed FPS and detection logs to console. |
 
-## 🏋️ Training (Reference)To train the Sign Model with the robust "Golden Command" (optimized for accuracy and geometry stability)
 
-```powershell
-yolo detect train model=yolo11s.pt data=datasets/VietNamSigns/data.yaml \
-    epochs=100 imgsz=960 scale=0.8 \
-    fliplr=0.0 flipud=0.0 shear=0.0 degrees=0.0 perspective=0.0 \
-    mosaic=1.0 mixup=0.0 close_mosaic=10 \
-    device=0 batch=8 workers=4 cache=disk amp=True \
-    name=yolo_final_stable
-
-```
-
-## 📜 Credits* **Dataset:** [Vietnamese Traffic Signs (Kaggle)](https://www.kaggle.com/datasets/maitam/vietnamese-traffic-signs)
+## 📜 Credits* **Dataset:** [VNTS merge Computer Vision Model (Roboflow)](https://universe.roboflow.com/nl-gt2le/vnts-merge)
 
 * **Frameworks:** [Ultralytics YOLO](https://github.com/ultralytics/ultralytics), [Supervision](https://github.com/roboflow/supervision)
