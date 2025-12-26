@@ -1,1 +1,0 @@
-The dataset is taken from: https://www.kaggle.com/datasets/maitam/vietnamese-traffic-signs
