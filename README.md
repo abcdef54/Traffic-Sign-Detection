@@ -23,6 +23,13 @@ Built with **YOLOv11**, **TensorRT**, and **SAHI-style Slicing**.
 * **Drivers:** CUDA 11.8 or 12.x installed.
 * **Python:** 3.8+.
 
+### 🎥 Performance Demo
+
+Check out the real-time inference speed (TensorRT + Slicing):
+
+<video src="https://github.com/user-attachments/assets/1b5bd2f7-7716-4e2a-9495-03789f79b4cf" controls="controls" style="max-width: 100%;">
+</video>
+
 ### Setup
 
 1. **Clone the repository:**

@@ -3,11 +3,14 @@ import time
 import sys
 import argparse
 import supervision as sv
+import os
 
-from src import PredictionStabilizer, MultithreadVideoCapture, TensorRTSliceModel
+from src import PredictionStabilizer, MultithreadVideoCapture, TensorRTSliceModel, ThreadedVideoWriter
 
 # These are the defaults if you run without arguments
 DEFAULT_SIGN_MODEL = "models/signs/best.engine"
+DEFAULT_ONNX = "models/signs/best.onnx"
+DEFAULT_PT = "models/signs/best.pt"
 DEFAULT_INPUT      = "outputs_vids/fix_2mins.mp4" # Or set to 0 for webcam
 
 # Class Names Mapping
@@ -235,7 +238,6 @@ def run_inference_loop(args, cap, engine, tracker, stabilizer, out):
 
 
 
-
 def main():
     args = parse_args()
 
@@ -266,10 +268,18 @@ def main():
     out = None
     if args.save:
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        out = cv2.VideoWriter(args.output, fourcc, fps, (width, height))
         print(f"[INFO] Saving output to: {args.output}")
+        out = ThreadedVideoWriter(args.output, fourcc, fps, (width, height))
 
     # --- Model Init ---
+    
+    if args.model == 'pt':
+        args.model = DEFAULT_PT
+    elif args.model == 'onnx':
+        args.model = DEFAULT_ONNX
+    elif args.model == 'engine':
+        args.model = DEFAULT_SIGN_MODEL
+
     print(f"[INFO] Initializing Model: {args.model}")
     overlap_ratios = (args.overlap, args.overlap)
 
@@ -298,6 +308,6 @@ def main():
     print("[INFO] Cleanup Complete.")
 
 if __name__ == "__main__":
-    # EXAMPLE RUN COMMAND
-    # python main.py --input "0 for video or video path for inference" --slice-interval 5 --save --show --ped-model "path_to_pedmodel or None"
+    # # EXAMPLE RUN COMMAND
+    # # python main.py --input "0 for video or video path for inference" --slice-interval 5 --save --show --ped-model "path_to_pedmodel or None"
     main()

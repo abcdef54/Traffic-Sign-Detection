@@ -23,7 +23,13 @@ def export(model_path: str, format: str = 'engine', batch: int = 1,
     )
 
 if __name__ == '__main__':
-    export(model_path="runs/detect/yolo11s_1280_tuned/weights/best.pt",
-           dynamic=True,
-           workspace=4,
-           batch=4)
+    export(
+        model_path="runs/detect/yolo11s_1280_tuned/weights/best.pt",
+        format='engine',    
+        dynamic=False,      
+        batch=1,
+        imgsz=1280,
+        half=True,
+        simplify=True,
+        workspace=4
+    )
