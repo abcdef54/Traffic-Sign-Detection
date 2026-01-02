@@ -247,7 +247,7 @@ def main():
         input_source = int(args.input)
         print(f"[INFO] Opening Webcam: {input_source}")
         # Use threaded capture for webcam to reduce latency
-        cap = MultithreadVideoCapture(input_source, queue_size=2)
+        cap = MultithreadVideoCapture(input_source, queue_size=1)
         width, height, fps = cap.width, cap.height, cap.fps
         is_webcam = True
     else:
@@ -255,14 +255,8 @@ def main():
             args.input = DEFAULT_INPUT
 
         print(f"[INFO] Opening Video: {args.input}")
-        # Use standard capture for files
-        cap = cv2.VideoCapture(args.input)
-        if not cap.isOpened():
-            print(f"[ERROR] Could not open video: {args.input}")
-            sys.exit(1)
-        width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps    = cap.get(cv2.CAP_PROP_FPS)
+        cap = MultithreadVideoCapture(args.input, queue_size=5, drop_old_frames=False)
+        width, height, fps = cap.width, cap.height, cap.fps
 
     # --- Output ---
     out = None

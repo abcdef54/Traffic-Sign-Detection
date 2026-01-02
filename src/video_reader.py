@@ -3,7 +3,7 @@ import cv2
 import queue
 
 class MultithreadVideoCapture:
-    def __init__(self, source, queue_size=1) -> None:
+    def __init__(self, source, queue_size=1, drop_old_frames=True) -> None:
         self.stream = cv2.VideoCapture(source)
         self.width = int(self.stream.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -15,6 +15,7 @@ class MultithreadVideoCapture:
         self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         self.stopped = False
+        self.drop_old_frames = drop_old_frames
         self.q = queue.Queue(maxsize=queue_size)
         self.thread = threading.Thread(target=self.update, args=())
         self.thread.daemon = True # Thread dies when main program dies
@@ -25,25 +26,38 @@ class MultithreadVideoCapture:
             ret, frame = self.stream.read()
             
             if not ret:
-                self.stop()
-                return
-
-            # If queue is full, remove the old frame to make room for the new one
-            if not self.q.empty():
-                try:
-                    self.q.get_nowait()
-                except queue.Empty:
-                    pass
-
-            self.q.put(frame)
+                self.stopped = True
+                break
+            
+            # If full, remove old to make room for new (Low Latency)
+            if self.drop_old_frames:
+                if self.q.full():
+                    try:
+                        self.q.get_nowait()
+                    except queue.Empty:
+                        pass
+                self.q.put(frame)
+            else:
+                # If full, BLOCK until space is available (No Skipping)
+                self.q.put(frame, block=True)
+        
+        self.stream.release()
     
     def read(self):
-        return self.q.get()
+        """Return the next frame or None if stream is over."""
+        try:
+            # Wait a bit for a frame (handles slight delays in reading)
+            return self.q.get(timeout=1.0) 
+        except queue.Empty:
+            # If queue is empty and thread is stopped, video is done
+            if self.stopped:
+                return None
+            return None # Should rarely reach here if stream is active but slow
     
     def more(self):
         return self.q.qsize() > 0
     
-    def stop(self):
+    def release(self):
         self.stopped = True
         self.stream.release()
     
