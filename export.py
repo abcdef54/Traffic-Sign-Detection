@@ -9,7 +9,7 @@ def export(model_path: str, format: str = 'engine', batch: int = 1,
 
     model = YOLO(model_path, 'detect')
 
-    print("🚀 Starting Export...")
+    print("Starting Export...")
 
     model.export(
         format=format,

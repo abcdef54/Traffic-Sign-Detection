@@ -14,15 +14,12 @@ class ThreadedVideoWriter:
     def write(self, frame):
         if self.stopped: return
         
-        # If queue is full, we drop the frame (or you could block: .put(frame, block=True))
-        # Dropping is better for real-time to prevent lag buildup
         if not self.queue.full():
             self.queue.put(frame.copy()) 
 
     def _worker(self):
         while not self.stopped or not self.queue.empty():
             try:
-                # Wait for a frame, but keep checking 'stopped' periodically
                 frame = self.queue.get(timeout=1)
                 self.writer.write(frame)
                 self.queue.task_done()
@@ -31,6 +28,6 @@ class ThreadedVideoWriter:
 
     def release(self):
         self.stopped = True
-        self.thread.join() # Wait for queue to empty
+        self.thread.join()
         self.writer.release()
         print("[INFO] Video Writer Released.")

@@ -1,21 +1,21 @@
-# 🚦 Real-Time Traffic Sign & Obstacle Detection (Vietnam)
+# Real-Time Traffic Sign & Obstacle Detection (Vietnam)
 
 A Computer Vision system designed to detect **Vietnamese Traffic Signs** and **Road Obstacles** (Pedestrians, Vehicles) in real-time.
 
 Built with **YOLOv11**, **TensorRT**, and **SAHI-style Slicing**.
 
-## 🌟 Key Features
+## Key Features
 
-* **⚡ TensorRT Optimized:** Runs purely on `.engine` models for maximum inference speed on NVIDIA GPUs.
-* **🔪 Dynamic Slicing (SAHI):** Automatically chops 1080p video into smaller tiles (e.g., 960x960) to detect tiny, far-away traffic signs that standard resizing would miss.
-* **🧠 Dual-Core Inference:** Capable of running two distinct models simultaneously:
+* **TensorRT Optimized:** Runs purely on `.engine` models for maximum inference speed on NVIDIA GPUs.
+* **Dynamic Slicing (SAHI):** Automatically chops 1080p video into smaller tiles (e.g., 960x960) to detect tiny, far-away traffic signs that standard resizing would miss.
+* **Dual-Core Inference:** Capable of running two distinct models simultaneously:
   * **Core A:** Custom Traffic Sign Model (YOLOv11s).
   * **Core B:** Obstacle/Pedestrian Model (YOLOv8n - COCO).
-* **🔄 Hybrid Speed System:** Alternates between "Detailed Slicing" (every N frames) and "Fast Full-Frame" inference to balance accuracy and FPS.
-* **⚖️ Label Stabilization:** Uses a custom Voting/Decay algorithm (`PredictionStabilizer`) to prevent label flickering when signs are far away or blurry.
-* **🧵 Multithreaded I/O:** Decouples video reading from processing to prevent I/O bottlenecks.
+* **Hybrid Speed System:** Alternates between "Detailed Slicing" (every N frames) and "Fast Full-Frame" inference to balance accuracy and FPS.
+* **Label Stabilization:** Uses a custom Voting/Decay algorithm (`PredictionStabilizer`) to prevent label flickering when signs are far away or blurry.
+* **Multithreaded I/O:** Decouples video reading from processing to prevent I/O bottlenecks.
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 
@@ -23,7 +23,7 @@ Built with **YOLOv11**, **TensorRT**, and **SAHI-style Slicing**.
 * **Drivers:** CUDA 11.8 or 12.x installed.
 * **Python:** 3.8+.
 
-### 🎥 Performance Demo
+### Performance Demo
 
 Check out the real-time inference speed (TensorRT + Slicing):
 
@@ -51,7 +51,7 @@ Check out the real-time inference speed (TensorRT + Slicing):
     * Place your trained Sign model (`.engine` or `.pt` or `.onnx`) in `models/signs/`.
     * (Optional) Place a standard YOLOv8n model in `models/peds/` for pedestrian detection.
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 Traffic-Sign-Detection/
@@ -82,7 +82,7 @@ Traffic-Sign-Detection/
 
 ```
 
-## 🚀 Usage
+## Usage
 
 ### 1. Basic Webcam Demo (Signs Only)Run the sign detector on your default webcam (ID 0). Slicing is enabled by default.
 
@@ -111,7 +111,7 @@ python main.py --model models/signs/best.engine --no-slice --show --input "0"
 
 ```
 
-## ⚙️ Configuration ArgumentsYou can tweak the system performance via command-line arguments
+## Configuration ArgumentsYou can tweak the system performance via command-line arguments
 
 | Argument | Default | Description |
 | --- | --- | --- |
@@ -125,6 +125,6 @@ python main.py --model models/signs/best.engine --no-slice --show --input "0"
 | `--verbose` | `False` | Print detailed FPS and detection logs to console. |
 
 
-## 📜 Credits* **Dataset:** [VNTS merge Computer Vision Model (Roboflow)](https://universe.roboflow.com/nl-gt2le/vnts-merge)
+## Credits* **Dataset:** [VNTS merge Computer Vision Model (Roboflow)](https://universe.roboflow.com/nl-gt2le/vnts-merge)
 
 * **Frameworks:** [Ultralytics YOLO](https://github.com/ultralytics/ultralytics), [Supervision](https://github.com/roboflow/supervision)

@@ -1,1 +1,1 @@
-The dataset is taken from: https://www.kaggle.com/datasets/maitam/vietnamese-traffic-signs
+The dataset is taken from: https://universe.roboflow.com/nl-gt2le/vnts-merge

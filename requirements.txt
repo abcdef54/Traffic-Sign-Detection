@@ -12,7 +12,7 @@ numpy>=1.24.0         # Math
 # --- Tracking & Slicing ---
 supervision>=0.24.0   # Contains ByteTrack & InferenceSlicer
 
-# --- CRITICAL: TensorRT & Export Support ---
+
 tensorrt>=10.0.0      # <--- REQUIRED to run .engine files
 tensorrt-libs>=10.0.0 # Libraries for the bindings
 onnx>=1.17.0          # Required for .pt -> .engine conversion

@@ -23,7 +23,6 @@ class TensorRTSliceModel:
         self.conf = conf
         self.frame_count = 0
         
-        # Hardcoded to 1280 as requested
         self.imgsz = 1280 
         
         self.slice_inference = slice_inference
@@ -37,7 +36,6 @@ class TensorRTSliceModel:
             
         self.dual_core = dual_core
         
-        # Load Sign Model
         self.sign_model = self._load_model(self.sign_model_path)
         print("[INFO] Sign Detection Model Loaded")
         
@@ -50,14 +48,12 @@ class TensorRTSliceModel:
             self.ped_model = self._load_model(self.ped_model_path)
             print(f"[INFO] Dual-Core Loaded: {self.ped_model_path}")
 
-        # --- Slicer Configuration ---
         slice_wh = (self.imgsz, self.imgsz)
         overlap_wh = (
             int(slice_wh[0] * overlap_ratio[0]), 
             int(slice_wh[1] * overlap_ratio[1])
         )
         
-        # Calculate stride just to validate overlap isn't too big
         stride_w = slice_wh[0] - overlap_wh[0]
         stride_h = slice_wh[1] - overlap_wh[1]
         
@@ -67,9 +63,7 @@ class TensorRTSliceModel:
         print(f"[INFO] Model Resolution: {self.imgsz}x{self.imgsz}")
         print(f"[INFO] Slicing Config: Fixed Slice: {slice_wh} | Overlap: {overlap_wh}")
         
-        # Dynamic Worker Calculation (Optimized)
         workers = os.cpu_count() or 1
-        # Cap at 8 to prevent thread overhead from diminishing returns
         workers = min(workers, 8) 
         print(f"[INFO] Thread Workers: {workers}")
 
@@ -104,37 +98,27 @@ class TensorRTSliceModel:
         print(f"[CONTROL] Slice Inference: {status}")
 
     def _slice_callback(self, image_slice: np.ndarray) -> sv.Detections:
-        """Callback for InferenceSlicer. Runs on small image chunks."""
         result = self.sign_model(image_slice, verbose=False, conf=self.conf, imgsz=self.imgsz)[0]
         return sv.Detections.from_ultralytics(result)
 
     def __call__(self, frame: np.ndarray | list[np.ndarray]) -> sv.Detections:
-        """
-        Main Inference Entry Point.
-        """
         self.frame_count = (self.frame_count + 1) % self.slice_interval
         should_slice = self.slice_inference and (self.frame_count % self.slice_interval == 0)
 
-        # 1. Sign Detection
         if should_slice:
-            # Slicer handles the full frame -> crops -> inference -> merge
             sign_detections = self.slicer(frame)
         else:
-            # Fast pass on resized full frame
             result = self.sign_model(frame, verbose=False, conf=self.conf, imgsz=self.imgsz)[0]
             sign_detections = sv.Detections.from_ultralytics(result)
         
-        # 2. Pedestrian Detection (Dual Core)
         ped_detections = None
         if self.dual_core and self.ped_model:
-            ped_result = self.ped_model(frame, verbose=False, conf=self.conf, imgsz=self.imgsz // 2)[0] # 1280 // 2 = 640, weird coincident
+            ped_result = self.ped_model(frame, verbose=False, conf=self.conf, imgsz=self.imgsz // 2)[0]
             ped_det = sv.Detections.from_ultralytics(ped_result)
             
-            # Filter for Humans/Cars (COCO IDs: 0=Person, 1=Bike, 2=Car, 5=Bus, 7=Truck)
             target_ids = [0, 1, 2, 5, 7]
             ped_det = ped_det[np.isin(ped_det.class_id, target_ids)]
             
-            # SHIFT IDs so they don't clash with signs
             ped_det.class_id += 100
             ped_detections = ped_det
 

@@ -18,7 +18,7 @@ class MultithreadVideoCapture:
         self.drop_old_frames = drop_old_frames
         self.q = queue.Queue(maxsize=queue_size)
         self.thread = threading.Thread(target=self.update, args=())
-        self.thread.daemon = True # Thread dies when main program dies
+        self.thread.daemon = True 
         self.thread.start()
     
     def update(self):
@@ -29,7 +29,6 @@ class MultithreadVideoCapture:
                 self.stopped = True
                 break
             
-            # If full, remove old to make room for new (Low Latency)
             if self.drop_old_frames:
                 if self.q.full():
                     try:
@@ -38,7 +37,6 @@ class MultithreadVideoCapture:
                         pass
                 self.q.put(frame)
             else:
-                # If full, BLOCK until space is available (No Skipping)
                 self.q.put(frame, block=True)
         
         self.stream.release()
@@ -46,13 +44,11 @@ class MultithreadVideoCapture:
     def read(self):
         """Return the next frame or None if stream is over."""
         try:
-            # Wait a bit for a frame (handles slight delays in reading)
             return self.q.get(timeout=1.0) 
         except queue.Empty:
-            # If queue is empty and thread is stopped, video is done
             if self.stopped:
                 return None
-            return None # Should rarely reach here if stream is active but slow
+            return None
     
     def more(self):
         return self.q.qsize() > 0

@@ -2,12 +2,7 @@ import os
 import glob
 from tqdm import tqdm
 
-# ==========================================
-# 1. DEFINE THE MAPPINGS
-# ==========================================
 
-# The list provided by Roboflow (The "Wrong" IDs)
-# Copied exactly from your prompt
 ROBOFLOW_NAMES = [
     'DP.135 - End all restrictions', 'I.423b - Pedestrian crossing', 'P.102 - No entry', 
     'P.103a - No cars', 'P.104 - No motorcycles', 'P.106a - No trucks', 
@@ -26,7 +21,6 @@ ROBOFLOW_NAMES = [
     'W.225 - Children crossing', 'W.227 - Construction', 'W.245a - Go slow'
 ]
 
-# Your "Golden Master" Dataset (The "Correct" IDs)
 MASTER_NAMES_DICT = {
     0: 'DP.135 - End all restrictions',
     1: 'I.408 - Parking allowed',
@@ -87,32 +81,25 @@ MASTER_NAMES_DICT = {
     56: 'P.124d - No right turn or U-turn'
 }
 
-# ==========================================
-# 2. CREATE THE MAPPING (ROBO_ID -> MASTER_ID)
-# ==========================================
 id_map = {}
 master_name_to_id = {v: k for k, v in MASTER_NAMES_DICT.items()}
 
-print("🔍 Building ID Mapping...")
+print("Building ID Mapping...")
 for robo_id, name in enumerate(ROBOFLOW_NAMES):
     if name in master_name_to_id:
         master_id = master_name_to_id[name]
         id_map[robo_id] = master_id
         print(f"   {robo_id}: '{name}' -> {master_id}")
     else:
-        print(f"⚠️  CRITICAL WARNING: Could not find '{name}' in Master List!")
+        print(f"CRITICAL WARNING: Could not find '{name}' in Master List!")
 
-# ==========================================
-# 3. PROCESSING FUNCTION
-# ==========================================
+
 def convert_dataset(source_folder, output_folder):
     os.makedirs(output_folder, exist_ok=True)
-    
-    # Process Images (Just Copy) - Optional if you already have them
-    # For now, let's just focus on Labels since that's what's broken
+
     
     label_files = glob.glob(os.path.join(source_folder, "*.txt"))
-    print(f"\n📂 Processing {len(label_files)} files in {source_folder}...")
+    print(f"\nProcessing {len(label_files)} files in {source_folder}...")
 
     for lbl_path in tqdm(label_files):
         filename = os.path.basename(lbl_path)
@@ -131,35 +118,20 @@ def convert_dataset(source_folder, output_folder):
                 
                 if robo_cls_id in id_map:
                     correct_id = id_map[robo_cls_id]
-                    # Reconstruct the line with the new ID
                     new_line = f"{correct_id} " + " ".join(parts[1:]) + "\n"
                     new_lines.append(new_line)
                 else:
-                    print(f"❌ Unknown Class ID {robo_cls_id} in {filename}")
+                    print(f"Unknown Class ID {robo_cls_id} in {filename}")
             except ValueError:
                 continue
                 
-        # Write corrected file
         with open(out_path, 'w') as f:
             f.writelines(new_lines)
 
-# ==========================================
-# 4. EXECUTE
-# ==========================================
-# ⚠️ UPDATE THESE PATHS TO MATCH YOUR FOLDERS
-# 'roboflow_download/train/labels' -> The folder you just downloaded and extracted
-# 'converted_labels/train'         -> Where you want the fixed files to go
-
-# Example usage for Train and Val
-# Step 1: Fix Train
-# convert_dataset(
-#     source_folder=r"C:/Users/Admin/Downloads/VNTS_new/train/labels", 
-#     output_folder=r"C:/Users/Admin/Downloads/VNTS_fixed/train/labels"
-# )
 
 convert_dataset(
     source_folder=r"C:/Users/Admin/Downloads/VNTS_new/valid/labels", 
     output_folder=r"C:/Users/Admin/Downloads/VNTS_fixed/val/labels"
 )
 
-print("\n✅ Conversion Complete. Copy the files from 'VNTS_Roboflow_Fixed' to your main dataset.")
+print("\nConversion Complete. Copy the files from 'VNTS_Roboflow_Fixed' to your main dataset.")
