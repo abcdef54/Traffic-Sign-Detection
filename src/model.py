@@ -8,7 +8,7 @@ class TensorRTSliceModel:
     def __init__(self, 
                  sign_model_path: str,
                  ped_model_path: Optional[str] = None,
-                 class_names: Dict[int, str] = None,
+                #  class_names: Dict[int, str] = None,
                  conf: float = 0.1,
                  slice_inference: bool = True,
                  dual_core: bool = True,
@@ -19,12 +19,12 @@ class TensorRTSliceModel:
         print("-------------Initializing TensorRTSliceModel-------------")
         self.sign_model_path = sign_model_path
         self.ped_model_path = ped_model_path
-        self.class_names = class_names or {}
+        # self.class_names = class_names or {}
         self.conf = conf
         self.frame_count = 0
         
-        # Hardcoded to 1280 as requested
         self.imgsz = 1280 
+        self.slice_imgsz = 640
         
         self.slice_inference = slice_inference
         self.slice_interval = slice_interval
@@ -51,7 +51,7 @@ class TensorRTSliceModel:
             print(f"[INFO] Dual-Core Loaded: {self.ped_model_path}")
 
         # --- Slicer Configuration ---
-        slice_wh = (self.imgsz, self.imgsz)
+        slice_wh = (self.slice_imgsz, self.slice_imgsz)
         overlap_wh = (
             int(slice_wh[0] * overlap_ratio[0]), 
             int(slice_wh[1] * overlap_ratio[1])
@@ -105,7 +105,7 @@ class TensorRTSliceModel:
 
     def _slice_callback(self, image_slice: np.ndarray) -> sv.Detections:
         """Callback for InferenceSlicer. Runs on small image chunks."""
-        result = self.sign_model(image_slice, verbose=False, conf=self.conf, imgsz=self.imgsz)[0]
+        result = self.sign_model(image_slice, verbose=False, conf=self.conf, imgsz=self.slice_imgsz)[0]
         return sv.Detections.from_ultralytics(result)
 
     def __call__(self, frame: np.ndarray | list[np.ndarray]) -> sv.Detections:
@@ -127,7 +127,7 @@ class TensorRTSliceModel:
         # 2. Pedestrian Detection (Dual Core)
         ped_detections = None
         if self.dual_core and self.ped_model:
-            ped_result = self.ped_model(frame, verbose=False, conf=self.conf, imgsz=self.imgsz // 2)[0] # 1280 // 2 = 640, weird coincident
+            ped_result = self.ped_model(frame, verbose=False, conf=self.conf, imgsz=self.slice_imgsz)[0] 
             ped_det = sv.Detections.from_ultralytics(ped_result)
             
             # Filter for Humans/Cars (COCO IDs: 0=Person, 1=Bike, 2=Car, 5=Bus, 7=Truck)

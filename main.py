@@ -8,7 +8,7 @@ import os
 from src import PredictionStabilizer, MultithreadVideoCapture, TensorRTSliceModel, ThreadedVideoWriter
 
 # These are the defaults if you run without arguments
-DEFAULT_SIGN_MODEL = "models/signs/best.engine"
+DEFAULT_SIGN_MODEL = "models/signs/best_dynamic.engine"
 DEFAULT_ONNX = "models/signs/best.onnx"
 DEFAULT_PT = "models/signs/best.pt"
 DEFAULT_INPUT      = "outputs_vids/fix_2mins.mp4" # Or set to 0 for webcam
@@ -126,11 +126,11 @@ def parse_args():
     parser.add_argument("--no-slice", action="store_false", dest="slice", help="Disable image slicing")
     parser.set_defaults(slice=True) 
     parser.add_argument("--slice-interval", type=int, default=5, help="Slice every N frames")
-    parser.add_argument("--overlap", type=float, default=0.2, help="Overlap ratio")
+    parser.add_argument("--overlap", type=float, default=0.0, help="Overlap ratio")
     
     # Thresholds
     parser.add_argument("--conf-detect", type=float, default=0.1, help="Detection Confidence")
-    parser.add_argument("--conf-track", type=float, default=0.55, help="Tracking Confidence")
+    parser.add_argument("--conf-track", type=float, default=0.5, help="Tracking Confidence")
     
     # Display
     parser.add_argument("--verbose", default=False, action="store_true", help="Print detailed logs")
@@ -280,7 +280,7 @@ def main():
     engine = TensorRTSliceModel(
         sign_model_path=args.model,
         ped_model_path=args.ped_model,
-        class_names=CLASS_NAMES,
+        # class_names=CLASS_NAMES,
         conf=args.conf_detect,
         slice_inference=args.slice,
         slice_interval=args.slice_interval,
@@ -289,7 +289,7 @@ def main():
     )
 
     tracker = sv.ByteTrack(track_activation_threshold=args.conf_track, lost_track_buffer=60, frame_rate=fps)
-    stabilizer = PredictionStabilizer()
+    stabilizer = PredictionStabilizer(decay=0.5)
 
     # --- Single Unified Execution ---
     run_inference_loop(args, cap, engine, tracker, stabilizer, out)
