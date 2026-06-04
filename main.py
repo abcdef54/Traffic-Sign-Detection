@@ -11,7 +11,7 @@ from src import PredictionStabilizer, MultithreadVideoCapture, TensorRTSliceMode
 DEFAULT_SIGN_MODEL = "models/signs/best_dynamic.engine"
 DEFAULT_ONNX = "models/signs/best.onnx"
 DEFAULT_PT = "models/signs/best.pt"
-DEFAULT_INPUT      = "outputs_vids/fix_2mins.mp4" # Or set to 0 for webcam
+DEFAULT_INPUT      = "test_videos/fix_2mins.mp4" # Or set to 0 for webcam
 
 # Class Names Mapping
 # Updated Class Names Mapping (57 Classes)

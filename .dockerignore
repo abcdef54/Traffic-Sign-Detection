@@ -1,0 +1,10 @@
+models/
+runs/
+outputs_vids/
+results/
+datasets/
+venv/
+.git/
+*.mp4
+*.avi
+.venv/

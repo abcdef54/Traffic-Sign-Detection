@@ -10,3 +10,4 @@ SanityCheck/
 __pycache__/
 outputs_vids/
 .vscode/
+.venv/

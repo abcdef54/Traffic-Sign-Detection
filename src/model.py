@@ -86,9 +86,50 @@ class TensorRTSliceModel:
 
     def _load_model(self, path: str) -> YOLO:
         try:
-            return YOLO(path, task='detect', verbose=False)
+            model = YOLO(path, task='detect', verbose=False)
+            if path.endswith('.engine'):
+                # Force a dummy prediction (warmup) to verify if the TensorRT engine
+                # loads and compiles successfully in this environment.
+                # If there's a serialization version mismatch, it will raise an Exception here,
+                # which triggers our fallback PyTorch recompilation.
+                import numpy as np
+                dummy_img = np.zeros((self.imgsz, self.imgsz, 3), dtype=np.uint8)
+                model(dummy_img, verbose=False)
+            return model
         except Exception as e:
-            raise Exception(f"CRITICAL: Could not load model at {path}. Error: {e}")
+            if path.endswith('.engine'):
+                print(f"[WARN] Failed to load TensorRT engine at: {path}")
+                print(f"[WARN] Error details: {e}")
+                
+                pt_backup_path = path.replace('.engine', '.pt')
+                
+                if os.path.exists(pt_backup_path):
+                    print(f"[INFO] Found matching PyTorch backup: {pt_backup_path}")
+                    print("[INFO] Initiating automated hardware-specific compilation pass...")
+                    try:
+                        base_model = YOLO(pt_backup_path, task='detect', verbose=False)
+                        base_model.export(
+                            format='engine', 
+                            imgsz=self.imgsz, 
+                            dynamic=True,  
+                            half=True 
+                        )
+                        
+                        print(f"[INFO] Successfully compiled new TensorRT engine at: {path}")
+                        return YOLO(path, task='detect', verbose=False)
+                        
+                    except Exception as export_error:
+                        raise Exception(
+                            f"CRITICAL: Found .pt backup, but automated TensorRT compilation failed. "
+                            f"Error: {export_error}"
+                        )
+                else:
+                    raise Exception(
+                        f"CRITICAL: TensorRT engine at {path} is incompatible with this hardware, "
+                        f"and no baseline PyTorch backup was found at {pt_backup_path} to re-compile from."
+                    )
+            else:
+                raise Exception(f"CRITICAL: Could not load model at {path}. Error: {e}")
         
     def toggle_dual_core(self):
         if not self.ped_model:
