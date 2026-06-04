@@ -37,10 +37,10 @@ This system utilizes a highly optimized stack combining state-of-the-art compute
 
 ## 📊 Model Training & Evaluation
 
-The custom traffic sign core was trained on a multi-device cloud GPU setup on [Vast.ai](https://vast.ai/) using **Automatic Mixed Precision (AMP)** to optimize memory layout and speed. Because the system utilizes **SAHI-style slicing**, the model was explicitly trained at a high native resolution to maintain feature crispness on cropped tiles.
+The custom traffic sign core was trained on a multi-device cloud GPU setup using **Automatic Mixed Precision (AMP)** to optimize memory layout and speed. Because the system utilizes **SAHI-style slicing**, the model was explicitly trained at a high native resolution to maintain feature crispness on cropped tiles.
 
 ### ⏱️ Training Profile
-* **Hardware Setup:** 2x NVIDIA GeForce RTX 4090 (24GB VRAM each) rented on [Vast.ai](https://vast.ai/), running via PyTorch Distributed Data Parallel (DDP).
+* **Hardware Setup:** 2x NVIDIA GeForce RTX 4090 (24GB VRAM each), running via PyTorch Distributed Data Parallel (DDP).
 * **Native Input Size:** `1280x1280` pixels (Crucial for retaining clear text/symbols on distant signs).
 * **Optimization Engine:** AdamW (`lr0=0.000164`, `momentum=0.9`, `weight_decay=0.0005`).
 * **Early Stopping:** Triggered at Epoch 71 (Best weights captured at Epoch 51). Total runtime: `~46.4 minutes` (0.773 hours).
@@ -149,7 +149,7 @@ All benchmarks were executed sequentially on an **NVIDIA RTX 4090** to measure p
 
 | Processing Throughput (Higher is Better) | End-to-End Latency Profile (Lower is Better) |
 | :---: | :---: |
-| ![Average FPS Chart](image_d94efb.png) | ![Average Latency Chart](image_d94ef8.png) |
+| ![Average FPS Chart](runs/detect/yolo11s_1280_tuned/fps.png) | ![Average Latency Chart](runs/detect/yolo11s_1280_tuned/latency.png) |
 
 ### 🔑 Key Engineering Takeaways
 
