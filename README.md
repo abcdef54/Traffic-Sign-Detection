@@ -2,14 +2,14 @@
 
 This repository contains a study on real-time computer vision methods for detecting Vietnamese traffic signs and road obstacles (pedestrians and vehicles). The project evaluates the practical integration of **YOLOv11**, **TensorRT optimization**, and **Slicing-Aided Hyper Inference (SAHI)** to balance detection accuracy and throughput on high-resolution video feeds.
 
-## 🎥 Model Demo
+## Model Demo
 
 The following recording demonstrates real-time inference using a TensorRT engine combined with frame slicing:
 
 <video src="https://github.com/user-attachments/assets/1b5bd2f7-7716-4e2a-9495-03789f79b4cf" controls="controls" style="max-width: 100%;">
 </video>
 
-## 🔬 Key Technical Implementations
+## Key Technical Implementations
 
 * **TensorRT Compilation:** Models are compiled into optimized `.engine` formats to reduce latency and maximize execution efficiency on NVIDIA GPUs.
 * **Slicing-Aided Hyper Inference (SAHI):** Integrates sliced-frame logic that divides input frames into smaller patches (e.g., 640x640) before running inference, improving recall on small or distant traffic signs.
@@ -18,7 +18,7 @@ The following recording demonstrates real-time inference using a TensorRT engine
 * **Prediction Stabilization:** Employs a simple voting and confidence decay algorithm (`PredictionStabilizer`) across tracked detections to mitigate bounding box label flickering.
 * **Threaded Frame Buffering:** Utilizes separate thread workers for video frame reading and output file writing to isolate I/O latency from the core model execution.
 
-## 💻 Tech Stack & Dependencies
+## Tech Stack & Dependencies
 
 This system utilizes a highly optimized stack combining state-of-the-art computer vision models, hardware-accelerated inference engines, and robust real-time image processing libraries.
 
@@ -35,17 +35,17 @@ This system utilizes a highly optimized stack combining state-of-the-art compute
 | **[NumPy](https://numpy.org/)** | `>=1.24.0` | High-performance array operations for Prediction Label Voting (PredictionStabilizer) and bounding box math. |
 | **[Vast.ai](https://vast.ai/)** | *Cloud Platform* | On-demand GPU rental service used for multi-GPU training execution (2x RTX 4090 via DDP). |
 
-## 📊 Model Training & Evaluation
+## Model Training & Evaluation
 
 The custom traffic sign core was trained on a multi-device cloud GPU setup using **Automatic Mixed Precision (AMP)** to optimize memory layout and speed. Because the system utilizes **SAHI-style slicing**, the model was explicitly trained at a high native resolution to maintain feature crispness on cropped tiles.
 
-### ⏱️ Training Profile
+### Training Profile
 * **Hardware Setup:** 2x NVIDIA GeForce RTX 4090 (24GB VRAM each), running via PyTorch Distributed Data Parallel (DDP).
 * **Native Input Size:** `1280x1280` pixels (Crucial for retaining clear text/symbols on distant signs).
 * **Optimization Engine:** AdamW (`lr0=0.000164`, `momentum=0.9`, `weight_decay=0.0005`).
 * **Early Stopping:** Triggered at Epoch 71 (Best weights captured at Epoch 51). Total runtime: `~46.4 minutes` (0.773 hours).
 
-### 🧠 Training Methodology & Data Augmentation
+### Training Methodology & Data Augmentation
 
 For this project, the goal was not just to achieve high validation metrics, but to train a model robust enough to handle the physical realities of standard dashcam footage. To achieve this, we bypassed the default YOLO augmentation pipeline and injected a custom `Albumentations` sequence designed specifically around environmental and hardware constraints.
 
@@ -71,7 +71,7 @@ The model was trained over 80 epochs using a high-resolution input to ensure tin
 | **Mosaic / Close Mosaic** | `1.0` / `20` | Mosaic augmentation was utilized heavily but disabled for the final 20 epochs to allow the model to fine-tune on natural, undistorted image layouts. |
 ---
 
-### 📈 Loss Curves & Validation Metrics
+### Loss Curves & Validation Metrics
 
 #### 1. Global Performance Metrics (All 57 Classes Combined)
 
@@ -123,17 +123,17 @@ Below is the validated accuracy profile extracted upon training completion:
 
 ![Normalized Confusion Matrix](runs/detect/yolo11s_1280_tuned/confusion_matrix_normalized.png)
 
-#### ⚡ Raw Engine Latency Profile (Prior to TensorRT Optimization)
+#### Raw Engine Latency Profile (Prior to TensorRT Optimization)
 * **Preprocess:** 0.1ms per image
 * **PyTorch Inference (FP32 base):** 1.8ms per image *(~555 FPS equivalent on native hardware matrix)*
 * **Postprocess:** 0.9ms per image
 </details>
 
-## 🚀 Optimization & Inference Benchmarks
+## Optimization & Inference Benchmarks
 
 To meet real-time deployment demands on high-resolution streams (`1280x1280`), the baseline PyTorch model was exported and optimized through **ONNX** and **NVIDIA TensorRT** pipelines. 
 
-### ⏱️ Performance Breakdown
+### Performance Breakdown
 All benchmarks were executed sequentially on an **NVIDIA RTX 4090** to measure processing throughput (FPS) and end-to-end hardware execution latency.
 
 | Model Format | Slicing (SAHI) | Resolution | Avg Latency | Std Dev | Avg FPS | Min Latency | Max Latency | Relative Perf. |
@@ -145,20 +145,20 @@ All benchmarks were executed sequentially on an **NVIDIA RTX 4090** to measure p
 | **TensorRT (`.engine`)**| ❌ | $1280 \times 1280$ | **9.32 ms** | **1.03 ms** | **107.28** | 7.00 ms | 25.94 ms | **171.1%** |
 | **TensorRT + Slice** |  | $1280 \times 1280$ | **13.69 ms** | **6.60 ms** | **73.02** | 7.44 ms | 397.82 ms | **116.5%** |
 
-### 📈 Metrics Visualization
+### Metrics Visualization
 
 | Processing Throughput (Higher is Better) | End-to-End Latency Profile (Lower is Better) |
 | :---: | :---: |
 | ![Average FPS Chart](runs/detect/yolo11s_1280_tuned/fps.png) | ![Average Latency Chart](runs/detect/yolo11s_1280_tuned/latency.png) |
 
-### 🔑 Key Engineering Takeaways
+### Key Engineering Takeaways
 
 * **The TensorRT Advantage:** Compiling the network to a native `.engine` format yields a **1.71× performance uplift** over baseline PyTorch, hitting a massive **107.28 FPS**. This is achieved via architectural layer fusion and hardware-specific kernel selections optimized directly for NVIDIA's execution cores.
 * **Overcoming the Slicing Bottleneck:** Tiling/Slicing high-resolution inputs usually tanks system frame rates due to multiple sub-patch inference passes. However, by offloading the pipeline onto TensorRT, **TensorRT + Slice runs at 73.02 FPS**—effectively outperforming a standard PyTorch model running *without* any slicing at all (62.70 FPS).
 * **Deterministic Low Latency:** Standard TensorRT execution brings average latency down to a near-instantaneous **9.32 ms** with a tight standard deviation of just **1.03 ms**, ensuring highly predictable frame timing and avoiding jerky video rendering.
 * **VRAM Efficiency:** Beyond sheer computation speed, the compiled engine bypasses heavy runtime overhead frameworks, stripping out unnecessary graph processes to keep the GPU operating cooler and substantially decreasing the memory footprint during long deployment cycles.
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 
@@ -218,7 +218,7 @@ Traffic-Sign-Detection/
 
 ```
 
-## 🚀 Execution & Usage
+## Execution & Usage
 
 There are two ways to set up and run this project:
 
@@ -260,7 +260,7 @@ To run via Docker:
 
 ---
 
-### 💻 Running Inference Examples
+### Running Inference Examples
 
 Once your environment is set up (locally or via Docker), you can run inference using the following configurations:
 
@@ -291,7 +291,7 @@ Disable sliced-frame logic to benchmark standard full-frame inference speeds (no
 python main.py --model models/signs/best_dynamic.engine --no-slice --show --input "0"
 ```
 
-## ⚙️ Configuration Parameters
+## Configuration Parameters
 
 Command-line parameters can be configured to adjust the performance and thresholds of the pipeline:
 
@@ -307,7 +307,7 @@ Command-line parameters can be configured to adjust the performance and threshol
 | `--verbose` | `False` | Enables printing detailed performance statistics to the console. |
 
 
-## 📚 References & Credits
+## References & Credits
 
 * **Dataset:** [VNTS Merge Vietnamese Traffic Sign Dataset](https://universe.roboflow.com/nl-gt2le/vnts-merge) on Roboflow (hosted by the Roboflow Universe community).
 * **Inference & Architecture:**
