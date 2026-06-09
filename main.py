@@ -195,8 +195,8 @@ def run_inference_loop(args, cap, engine, tracker, stabilizer, out):
                                                         tracked_detections.tracker_id,
                                                         tracked_detections.confidence):
                     raw_name = get_class_name(class_id)
-                    final_name = stabilizer.vote(tracker_id, raw_name, conf)
-                    labels.append(f"{final_name} {conf:.2f}")
+                    final_name, stablized_conf = stabilizer.vote(tracker_id, raw_name, conf)
+                    labels.append(f"{final_name} {stablized_conf:.2f}")
             
             # 5. Annotation
             annotated_frame = frame.copy()
